@@ -73,13 +73,13 @@ def mam_gpu(Pi, D, q, maps, S_m, a_m, rho=1000.0, max_it=1000, tol=1e-4, dtype=T
     return p, Pi
 
 ## Test 1 with centered digits
-import pickle
-N = 10
-with open('../toy_examples/digit_datasets/3_centered.pkl', 'rb') as f:  # b_centers_MNIST #b_1_mat
-    l_b = pickle.load(f)
-b = l_b[:N]
+# import pickle
+# N = 10
+# with open('../toy_examples/digit_datasets/3_centered.pkl', 'rb') as f:  # b_centers_MNIST #b_1_mat
+#     l_b = pickle.load(f)
+# b = l_b[:N]
 
-mam_gpu(b, rho=.1,
-    exact=False,
-    computation_time=20, iterations_max=400, precision=10 ** -6,
-    visualize=True, name=f'outputs_Centered.pkl')
+# mam_gpu(b, rho=.1,
+#     exact=False,
+#     computation_time=20, iterations_max=400, precision=10 ** -6,
+#     visualize=True, name=f'outputs_Centered.pkl')

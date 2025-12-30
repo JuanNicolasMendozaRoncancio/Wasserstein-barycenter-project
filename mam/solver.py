@@ -345,7 +345,6 @@ def MAM(b, M_dist=False, exact=False,
     return (p, P, Time, Wdist, l_precisionB, Precision, Iterations, total_time, iterations_k)  #Pi_tot
 
 
-
 def division_tasks(nb_tasks, pool_size):
     """
     Inputs: (int)

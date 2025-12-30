@@ -3,7 +3,7 @@ import numpy as np
 import scipy
 from scipy import spatial
 import time
-
+from scipy.sparse import csc_matrix
 # Vectorize function that project vectors onto a simplex, inspired by https://gist.github.com/mblondel/c99e575a5207c76a99d714e8c6e08e89
 def projection_simplex(V, z=1, axis=None):
     """
