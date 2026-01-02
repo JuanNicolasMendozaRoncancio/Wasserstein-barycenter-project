@@ -6,7 +6,7 @@
 ![Last Commit](https://img.shields.io/github/last-commit/dan-mim/computing-wasserstein-barycenters-MAM)
 ![Repo Size](https://img.shields.io/github/repo-size/dan-mim/computing-wasserstein-barycenters-MAM)
 
-# **This is a copy of the ORIGINAL MAM repository **
+# This is a copy of the ORIGINAL MAM repository 
 
 This copy can be found on the following link:
 
