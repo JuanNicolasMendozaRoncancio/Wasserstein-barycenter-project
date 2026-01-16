@@ -1,7 +1,7 @@
 import numpy as np
 import time
-import MAMR_python.GetPlan as gp
-from MAMR_python.GetPlan import GetPlan
+import GetPlan as gp
+from GetPlan import GetPlan
 import matplotlib.pyplot as plt
 
 def MAMR(d, q, M, R, S, p, rho, tol, MaxCPU, PrintEvery,UseGPU = False):
@@ -42,6 +42,14 @@ def MAMR(d, q, M, R, S, p, rho, tol, MaxCPU, PrintEvery,UseGPU = False):
     cpu = 0.0
     k = 0
 
+    plt.figure()
+    img = xp.reshape(1 - p, (Kn, Kn))
+    img_np = xp.asnumpy(img) if UseGPU else img
+
+    im_handle = plt.imshow(img_np, cmap='hot')
+    cbar = plt.colorbar(im_handle)
+    plt.title("MAM-R")
+    plt.pause(0.01)
 
     while cpu <= MaxCPU:
         k += 1
@@ -55,14 +63,24 @@ def MAMR(d, q, M, R, S, p, rho, tol, MaxCPU, PrintEvery,UseGPU = False):
 
             print(f"k = {k:5d}, |pk-pkk| = {nx:5.2e}, cpu = {cpu:5.0f}")
 
+            # img = xp.reshape(1 - p, (Kn, Kn))
+
+            # img_np = xp.asnumpy(img) if UseGPU else img
+            # plt.imshow(img_np, cmap='hot')
+
+            # plt.title(f"k={k}, t={NextPrint}")
+            # plt.colorbar()
+            # plt.show(block=False)
+            # plt.pause(0.01)
+
             img = xp.reshape(1 - p, (Kn, Kn))
+            img_np = xp.asnumpy(img) if UseGPU else img
 
-            plt.imshow(xp.asnumpy(img), cmap='hot')
-            plt.title(f"k={k}, t={NextPrint}")
-            plt.colorbar()
-            plt.show(block=False)
+            im_handle.set_data(img_np)
+            im_handle.set_clim(img_np.min(), img_np.max())
+            plt.title(f"k={k}, t={round(cpu)}")
             plt.pause(0.01)
-
+            
             if nx <= tol:
                 break
 
@@ -96,10 +114,12 @@ def MAMR(d, q, M, R, S, p, rho, tol, MaxCPU, PrintEvery,UseGPU = False):
     print(f"k = {k:5d}, |pk-pkk| = {nx:5.2e}, cpu = {cpu:5.0f}")
 
     img = xp.reshape(1 - p, (Kn, Kn))
-    plt.imshow(xp.asnumpy(img), cmap='hot')
-    plt.title(f"k={k}, t={round(cpu)}")
+    img_np = xp.asnumpy(img) if UseGPU else img
+
+    plt.figure()
+    plt.imshow(img_np, cmap='hot')
     plt.colorbar()
-    plt.show(block=False)
-    plt.pause(0.01)
+    plt.title(f"Final k={k}, t={round(cpu)}")
+    plt.show()
 
     return p, val, cpu, theta

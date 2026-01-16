@@ -1,9 +1,10 @@
 import numpy as np
-from MAMR_python.MAMR_Original import MAMR
-from MAMR_python.distGrid import distGrid
-from MAMR_python.salvaPNG import salvaPNG
+from MAMR_Original import MAMR
+from distGrid import distGrid
+from salvaPNG import salvaPNG
 import matplotlib.pyplot as plt
 import os
+os.chdir(os.path.dirname(__file__))
 
 def main():
     np.random.seed(0)
@@ -11,10 +12,10 @@ def main():
     # ===============================
     # Parameters
     # ===============================
-    M = 25          # number of images
-    K = 60          # image size K x K
-    MaxCPU = 60     # seconds
-    PrintEvery = 5  # seconds
+    M = 30          # number of images
+    K =60         # image size K x K    
+    MaxCPU = 7204   # seconds
+    PrintEvery = 10  # seconds
     tol = -np.inf
 
     UseGPU = False  # CPU only
@@ -96,10 +97,23 @@ def main():
     # ===============================
     # Plot result
     # ===============================
+
+    print("p min:", p.min())
+    print("p max:", p.max())
+    print("p sum:", p.sum())
+    
     p = p.reshape(Kn, Kn)
-    plt.imshow(1 - p, cmap="hot")
+    img = 1 - p
+    img = (img - img.min()) / (img.max() - img.min())
+
+    plt.figure()
+    plt.imshow(img, cmap="hot")
     plt.colorbar()
     plt.title("MAM-R Barycenter")
+    salvaPNG(plt.gcf(), "Final-MAMR.png")
+
     plt.show()
 
-    salvaPNG(plt.gcf(), "Final-MAMR.png")
+
+if __name__ == "__main__":
+    main()
