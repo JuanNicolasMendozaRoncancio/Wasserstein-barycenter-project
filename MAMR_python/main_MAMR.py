@@ -1,14 +1,17 @@
 import numpy as np
+
 from MAMR_Original import MAMR
 from MAM_Restriction_on_capa import MAMR_RC
-from MAM_FROB_RESTRICTION import MAMR_RC as MAMR_FROB_RC
+from MAM_FROB_RESTRICTION import MAMR_RC 
+from MAM_Restriction_on_bray import MAMR_RC_B
+
 from distGrid import distGrid
 from salvaPNG import salvaPNG
 import matplotlib.pyplot as plt
 import os
 os.chdir(os.path.dirname(__file__))
 
-def main(capacity=False, frobenius=False, u = 1, tau = 1):
+def main(res='o', u_vect=None, u_sca = 1, tau = 1):
     np.random.seed(0)
 
     # ===============================
@@ -81,7 +84,7 @@ def main(capacity=False, frobenius=False, u = 1, tau = 1):
     # ===============================
     # Run MAM-R
     # ===============================
-    if capacity:
+    if res == 'c':
         print("Running MAM-R with restriction on capacity...")
         p, _, _, _ = MAMR_RC(
             d=d,
@@ -95,11 +98,11 @@ def main(capacity=False, frobenius=False, u = 1, tau = 1):
             tol=tol,
             MaxCPU=MaxCPU,
             PrintEvery=PrintEvery,
-            u=u
+            u=u_sca
         )
-    elif frobenius:
+    elif res == 'f':
         print("Running MAM-R with Frobenius norm regularization...")
-        p, _, _, _ = MAMR_FROB_RC(
+        p, _, _, _ = MAMR_RC(
             d=d,
             tau=tau,
             q=q,
@@ -112,7 +115,22 @@ def main(capacity=False, frobenius=False, u = 1, tau = 1):
             tol=tol,
             MaxCPU=MaxCPU,
             PrintEvery=PrintEvery,
-            u=u
+        )
+    elif res == 'b':
+        print("Running MAM-R with restriction on capacity on barycenter...")
+        p, _, _, _ = MAMR_RC_B(
+            d=d,
+            q=q,
+            M=M,
+            R=R,
+            S=S,
+            p=p,
+            rho=rho,
+            UseGPU=UseGPU,
+            tol=tol,
+            MaxCPU=MaxCPU,
+            PrintEvery=PrintEvery,
+            u=u_vect
         )
     else:
         print("Running MAM-R original...")
@@ -142,7 +160,7 @@ def main(capacity=False, frobenius=False, u = 1, tau = 1):
     img = 1 - p
     img = (img - img.min()) / (img.max() - img.min())
 
-    if capacity:
+    if res == 'c':
         plt.title(f"MAM-R with capacity u={u}")
         plt.figure()
         plt.imshow(img, cmap="hot")
@@ -150,13 +168,21 @@ def main(capacity=False, frobenius=False, u = 1, tau = 1):
         plt.title(f"MAM-R Barycenter capacity u={u}")
         salvaPNG(plt.gcf(), f"Final-MAMR_Cap_u={u}.png", outputFolder=r"Fig\capacity")
         plt.show()
-    elif frobenius:
+    elif res == 'f':
         plt.title(f"MAM-R with Frobenius norm regularization tau={tau}")
         plt.figure()
         plt.imshow(img, cmap="hot")
         plt.colorbar()
         plt.title(f"MAM-R Barycenter Frobenius tau={tau}")
         salvaPNG(plt.gcf(), f"Final-MAMR_Frob_tau={tau}.png",outputFolder=r"Fig\frobenius")
+        plt.show()
+    elif res == 'b':
+        plt.title("MAM-R with capacity on barycenter")
+        plt.figure()
+        plt.imshow(img, cmap="hot")
+        plt.colorbar()
+        plt.title("MAM-R Barycenter with capacity")
+        salvaPNG(plt.gcf(), "Final-MAMR_Cap_on_barycenter.png",outputFolder=r"Fig\capacity_on_barycenter")
         plt.show()
     else:
         plt.title("MAM-R Original")
@@ -169,13 +195,13 @@ def main(capacity=False, frobenius=False, u = 1, tau = 1):
 
 
 if __name__ == "__main__":
-    cap = input("Use capacity constraint? (y/n): ").lower() == 'y'
-    capf = input("Use Frobenius norm regularization? (y/n): ").lower() == 'y'
-    if cap:
+    res = input("Enter c fot capacity on plans, f for Frobenius on plans, b for capacity on barycenter, n for none (c/f/b/n): ").lower()
+    
+    if res == 'c':
         list = input("Run for multiple u values? (y/n): ").lower() == 'y'
         if not list:
             u_value = float(input("Enter the value of u (between 0 and 1): "))
-            main(capacity=True, u=u_value)
+            main(res='c', u_sca=u_value)
         else:
             u_values = [1, 0.75, 0.5, 0.25, 0.1,0.01,0.001,0.0001]
             print("Running MAM-R with capacity constraints for different u values:", u_values)
@@ -184,8 +210,8 @@ if __name__ == "__main__":
                 print(f"\n{'='*50}")
                 print(f"Running with u = {u_value}")
                 print(f"{'='*50}\n")
-                main(capacity=True, u=u_value)
-    elif capf:
+                main(res='c', u_sca=u_value)
+    elif res == 'f':
         list = input("Run for multiple tau values? (y/n): ").lower() == 'y'
         if list:
             tau_values = [0.5, 0.25, 0.1, 0.01, 0.001, 0.0001, 0.00001, 5.8556e-06]
@@ -195,9 +221,26 @@ if __name__ == "__main__":
                 print(f"\n{'='*50}")
                 print(f"Running with tau = {tau_value}")
                 print(f"{'='*50}\n")
-                main(frobenius=True, tau=tau_value)
+                main(res='f', tau=tau_value)
         else:
             tau_value = float(input("Enter the value of tau (positive number): "))
-            main(frobenius=True, tau=tau_value)
+            main(res='f', tau=tau_value)
+    elif res == 'b':
+        u = input("Want to set a specific value for vector u (non recomended for large R)? (y/n): ").lower()
+        if u == 'y':
+            size_u = int(input("Enter the size of vector u (should be equal to R): "))
+            u_vector = []
+            print("Enter the elements of vector u (non-negative, sum at least 1):")
+            for i in range(size_u):
+                val = float(input(f"u[{i}]: "))
+                u_vector.append(val)
+            main(res='b', u_vect=u_vector)
+        else:
+            K = int(input("Enter the image size K (to compute R=K*K): "))
+            R = K * K
+            equal_u = 1.0 / R + 0.01  # Slightly above uniform to ensure sum(u) > 1
+            u_vector = [equal_u] * R
+            print(f"Using uniform capacity vector u with each element = {equal_u}")
+            main(res='b', u_vect=u_vector)
     else:
-        main(capacity=False)
+        main(res='o')

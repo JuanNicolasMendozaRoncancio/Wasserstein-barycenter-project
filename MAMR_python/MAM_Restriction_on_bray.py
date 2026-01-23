@@ -1,17 +1,18 @@
 import numpy as np
 import time
 import GetPlan as gp
+from Poj_restric_p import proj_restric_p
 from GetPlan import GetPlan
 import matplotlib.pyplot as plt
 
-def MAMR_RC(d, tau,  q, M, R, S, p, rho, tol, MaxCPU, PrintEvery,UseGPU = False):
+def MAMR_RC_B(d, u,  q, M, R, S, p, rho, tol, MaxCPU, PrintEvery,UseGPU = False):
     """
     Multi-Marginal Algorithm with Restriction on Capacity (MAM-RC)
     Solves the multi-marginal problem with capacity constraints using
     a variant of the MAM-R algorithm.
     Inputs:
     - d: list of M cost matrices (each of size R x S[m])
-    - tau: Frobenius norm regularization parameter
+    - u: upper bound vector for capacity constraints (size R, non-negative, sum(u) >= 1)
     - q: list of M marginal distributions (each of size S[m])
     - M: number of marginals
     - R: size of the primary space
@@ -31,16 +32,12 @@ def MAMR_RC(d, tau,  q, M, R, S, p, rho, tol, MaxCPU, PrintEvery,UseGPU = False)
     """
 
     #Verift if tau is valid, tau should be greater than max 1/(R*S[m])
-    if tau >= 1:
-        raise ValueError("tau should be less than 1")
-
-    mx_rs = -np.inf
-    for m in range(M):
-        mx_rs = max(mx_rs, 1/(R*S[m]))
-    
-    print(f"max 1/(R*S[m]) = {mx_rs}")
-    if tau < mx_rs:
-        raise ValueError(f"tau should be greater than max 1/(R*S[m]) = {mx_rs}")
+    if sum(u) < 1.0:
+        raise ValueError("The sum of the capacity constraints u must be at least 1.")
+    elif any(ui < 0 for ui in u):
+        raise ValueError("All elements of the capacity constraint vector u must be non-negative.")
+    if len(u) != R:
+        raise ValueError("The length of the capacity constraint vector u must be equal to R.")
 
 
     # Optional GPU support
@@ -61,7 +58,6 @@ def MAMR_RC(d, tau,  q, M, R, S, p, rho, tol, MaxCPU, PrintEvery,UseGPU = False)
     # weights a_m = (1/S_m) / sum_j (1/S_j)
     a = 1.0 / xp.asarray(S)
     a = a / a.sum()
-    u = float(u)
 
 
     #Romero
@@ -140,22 +136,10 @@ def MAMR_RC(d, tau,  q, M, R, S, p, rho, tol, MaxCPU, PrintEvery,UseGPU = False)
                 + (qm.sum() - 1.0) / (R * S[m])
             )
 
-            coef_m = tau/np.maximum(tau, np.linalg.norm(np.maximum(0,theta[m] + 2*beta - d[m]), 'fro'))
 
-            #Update without simplex   
-            theta[m] = coef_m*np.maximum(0,theta[m]+ 2*beta - d[m]) - beta 
+            algo = proj_restric_p(theta[m] + 2*beta - d[m], u)
 
-            ## Bien NO TOCAR
-
-            # # First proximal opp
-            # pi = theta[m] + beta
-
-            # #Second proximal opp
-            # coef_m = tau/np.maximum(tau, np.linalg.norm(np.maximum(0,2*pi - theta[m] - d[m]), 'fro'))
-            # pi_hat = coef_m * np.maximum(0,2*pi - theta[m] - d[m])
-
-            # #Update
-            # theta[m] += pi_hat - pi
+            theta[m] = algo - beta
 
             #Marginal update
             pk[m] = theta[m].sum(axis=1)
