@@ -2,8 +2,9 @@ import numpy as np
 
 from MAMR_Original import MAMR
 from MAM_Restriction_on_capa import MAMR_RC
-from MAM_FROB_RESTRICTION import MAMR_RC 
+from MAM_FROB_RESTRICTION import MAMR_RC_F 
 from MAM_Restriction_on_bray import MAMR_RC_B
+from MAM_Restriction_on_components import MAMR_RC_C
 
 from distGrid import distGrid
 from salvaPNG import salvaPNG
@@ -11,7 +12,7 @@ import matplotlib.pyplot as plt
 import os
 os.chdir(os.path.dirname(__file__))
 
-def main(res='o', u_vect=None, u_sca = 1, tau = 1):
+def main(res='o', u_vect=None, u_sca = 1, tau = 1, T = None):
     np.random.seed(0)
 
     # ===============================
@@ -102,7 +103,7 @@ def main(res='o', u_vect=None, u_sca = 1, tau = 1):
         )
     elif res == 'f':
         print("Running MAM-R with Frobenius norm regularization...")
-        p, _, _, _ = MAMR_RC(
+        p, _, _, _ = MAMR_RC_F(
             d=d,
             tau=tau,
             q=q,
@@ -131,6 +132,22 @@ def main(res='o', u_vect=None, u_sca = 1, tau = 1):
             MaxCPU=MaxCPU,
             PrintEvery=PrintEvery,
             u=u_vect
+        )
+    elif res == 'm':
+        print("Running MAM-R with restriction on components...")
+        p, _, _, _ = MAMR_RC_C(
+            d=d,
+            q=q,
+            M=M,
+            R=R,
+            S=S,
+            p=p,
+            rho=rho,
+            UseGPU=UseGPU,
+            tol=tol,
+            MaxCPU=MaxCPU,
+            PrintEvery=PrintEvery,
+            T=T
         )
     else:
         print("Running MAM-R original...")
@@ -184,6 +201,14 @@ def main(res='o', u_vect=None, u_sca = 1, tau = 1):
         plt.title("MAM-R Barycenter with capacity")
         salvaPNG(plt.gcf(), "Final-MAMR_Cap_on_barycenter.png",outputFolder=r"Fig\capacity_on_barycenter")
         plt.show()
+    elif res == 'm':
+        plt.title("MAM-R with restriction on components")
+        plt.figure()
+        plt.imshow(img, cmap="hot")
+        plt.colorbar()
+        plt.title("MAM-R Barycenter with restriction on components")
+        salvaPNG(plt.gcf(), "Final-MAMR_Restriction_on_components.png",outputFolder=r"Fig\restriction_on_components")
+        plt.show()
     else:
         plt.title("MAM-R Original")
         plt.figure()
@@ -195,7 +220,10 @@ def main(res='o', u_vect=None, u_sca = 1, tau = 1):
 
 
 if __name__ == "__main__":
-    res = input("Enter c fot capacity on plans, f for Frobenius on plans, b for capacity on barycenter, n for none (c/f/b/n): ").lower()
+    res = input("Enter c fot capacity on plans, " \
+    "f for Frobenius on plans, " \
+    "b for capacity on barycenter, m for restriction on components, " \
+    "n for none (c/f/b/m/n): ").lower()
     
     if res == 'c':
         list = input("Run for multiple u values? (y/n): ").lower() == 'y'
@@ -241,6 +269,60 @@ if __name__ == "__main__":
             equal_u = 1.0 / R + 0.01  # Slightly above uniform to ensure sum(u) > 1
             u_vector = [equal_u] * R
             print(f"Using uniform capacity vector u with each element = {equal_u}")
-            main(res='b', u_vect=u_vector)
+            main(res='b', u_vect=u_vector)  
+    elif res == 'm':
+        M = int(input("Enter the number of marginals M: "))
+        K = int(input("Enter the image size K (to compute R=K*K): "))
+        R = K * K
+        comp = input("Want to set restricted components manually? (y/n): ").lower()
+        if comp == 'y':
+            T = []
+            for m in range(M):
+                T_m = []
+                components = input(f"Enter the restricted components for marginal {m+1} as pairs (i,j) separated by spaces (e.g., '0,1 2,3')")
+                if components.strip():
+                    pairs = components.split()
+                    for pair in pairs:
+                        i, j = map(int, pair.split(','))
+                        T_m.append((i, j))
+                T.append(T_m)
+            main(res='m', T=T)
+        else:
+            #Select random restricted components for of the M marginals
+            #For simplicity, we restrict 5% of the components in each marginal
+            #Each marginal has size S[m], we randomly select 5% of R*S[m] components to be restricted
+            np.random.seed(0)
+            T = [[] for _ in range(M)]
+
+            #Geting the sizes S[m] from the data
+            Q = np.zeros((K * K, M))
+            for i in range(M):
+                data = np.loadtxt(
+                    os.path.join("dataPeyre", f"{i+1}.csv"),
+                    delimiter=","
+                )
+                data[:, 2] /= data[:, 2].sum()
+                im = np.zeros((K, K))
+                for r, c, v in data:
+                    r = int(r) - 1
+                    c = max(int(c) - 1, 0)
+                    im[r, c] = v
+                Q[:, i] = im.reshape(-1)
+
+            S = []
+            for m in range(M):
+                I = Q[:, m] > 1e-15
+                S.append(I.sum())
+
+
+            for m in range(M):
+                num_restricted = int(0.05 * R * S[m])  # 5% restriction
+                restricted_indices = np.random.choice(R * S[m], num_restricted, replace=False)
+                for idx in restricted_indices:
+                    i = idx // S[m]
+                    j = idx % S[m]
+                    T[m].append((i, j))
+
+            main(res='m', T=T)
     else:
         main(res='o')

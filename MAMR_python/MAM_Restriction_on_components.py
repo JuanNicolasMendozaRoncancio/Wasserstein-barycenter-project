@@ -4,14 +4,13 @@ import GetPlan as gp
 from GetPlan import GetPlan
 import matplotlib.pyplot as plt
 
-def MAMR_RC_F(d, tau,  q, M, R, S, p, rho, tol, MaxCPU, PrintEvery,UseGPU = False):
+def MAMR_RC_C(d, q, M, R, S, p, rho, tol, MaxCPU, PrintEvery,T,UseGPU = False):
     """
     Multi-Marginal Algorithm with Restriction on Capacity (MAM-RC)
     Solves the multi-marginal problem with capacity constraints using
     a variant of the MAM-R algorithm.
     Inputs:
     - d: list of M cost matrices (each of size R x S[m])
-    - tau: Frobenius norm regularization parameter
     - q: list of M marginal distributions (each of size S[m])
     - M: number of marginals
     - R: size of the primary space
@@ -21,6 +20,7 @@ def MAMR_RC_F(d, tau,  q, M, R, S, p, rho, tol, MaxCPU, PrintEvery,UseGPU = Fals
     - tol: tolerance for convergence
     - MaxCPU: maximum CPU time
     - PrintEvery: time interval for printing progress
+    - T: list (of size M) of lists with elemnts being tupples (i,j) indicating the entries of theta[m] that are meant to be zero 
     - UseGPU: boolean flag to use GPU acceleration
     Outputs:
     - p: computed barycenter distribution (size R)
@@ -29,19 +29,6 @@ def MAMR_RC_F(d, tau,  q, M, R, S, p, rho, tol, MaxCPU, PrintEvery,UseGPU = Fals
     - theta: list of transport plans (each of size R x S[m])
 
     """
-
-    #Verift if tau is valid, tau should be greater than max 1/(R*S[m])
-    if tau >= 1:
-        raise ValueError("tau should be less than 1")
-
-    mx_rs = -np.inf
-    for m in range(M):
-        mx_rs = max(mx_rs, 1/(R*S[m]))
-    
-    print(f"max 1/(R*S[m]) = {mx_rs}")
-    if tau < mx_rs:
-        raise ValueError(f"tau should be greater than max 1/(R*S[m]) = {mx_rs}")
-
 
     # Optional GPU support
     UseGPU = False
@@ -129,9 +116,8 @@ def MAMR_RC_F(d, tau,  q, M, R, S, p, rho, tol, MaxCPU, PrintEvery,UseGPU = Fals
         avg = xp.zeros(R)
 
         for m in range(M):
-            # #Theta update
+            #Theta update
             qm = theta[m].sum(axis=0)
-
 
             #Romeros
             beta = (
@@ -140,22 +126,19 @@ def MAMR_RC_F(d, tau,  q, M, R, S, p, rho, tol, MaxCPU, PrintEvery,UseGPU = Fals
                 + (qm.sum() - 1.0) / (R * S[m])
             )
 
-            coef_m = tau/np.maximum(tau, np.linalg.norm(np.maximum(0,theta[m] + 2*beta - d[m]), 'fro'))
+            #Update without simplex
+            mask_T = np.zeros((R, S[m]), dtype=bool)
+            rows, cols = zip(*T[m])
+            mask_T[rows, cols] = True
 
-            #Update without simplex   
-            theta[m] = coef_m*np.maximum(0,theta[m]+ 2*beta - d[m]) - beta 
+            theta_new = np.maximum(
+                -beta,
+                theta[m] - 2*beta - d[m]
+            )
 
-            ## Bien NO TOCAR
+            theta_new[mask_T] = -beta[mask_T]
 
-            # # First proximal opp
-            # pi = theta[m] + beta
-
-            # #Second proximal opp
-            # coef_m = tau/np.maximum(tau, np.linalg.norm(np.maximum(0,2*pi - theta[m] - d[m]), 'fro'))
-            # pi_hat = coef_m * np.maximum(0,2*pi - theta[m] - d[m])
-
-            # #Update
-            # theta[m] += pi_hat - pi
+            theta[m] = theta_new
 
             #Marginal update
             pk[m] = theta[m].sum(axis=1)
