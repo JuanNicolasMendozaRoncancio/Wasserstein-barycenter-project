@@ -48,7 +48,7 @@ def MAMR_RC_C(d, q, M, R, S, p, rho, tol, MaxCPU, PrintEvery,T,UseGPU = False):
     # weights a_m = (1/S_m) / sum_j (1/S_j)
     a = 1.0 / xp.asarray(S)
     a = a / a.sum()
-    u = float(u)
+
 
 
     #Romero
@@ -133,7 +133,7 @@ def MAMR_RC_C(d, q, M, R, S, p, rho, tol, MaxCPU, PrintEvery,T,UseGPU = False):
 
             theta_new = np.maximum(
                 -beta,
-                theta[m] - 2*beta - d[m]
+                theta[m] + beta - d[m]
             )
 
             theta_new[mask_T] = -beta[mask_T]

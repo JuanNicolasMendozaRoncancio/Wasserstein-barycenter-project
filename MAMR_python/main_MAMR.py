@@ -222,7 +222,8 @@ def main(res='o', u_vect=None, u_sca = 1, tau = 1, T = None):
 if __name__ == "__main__":
     res = input("Enter c fot capacity on plans, " \
     "f for Frobenius on plans, " \
-    "b for capacity on barycenter, m for restriction on components, " \
+    "b for capacity on barycenter, " \
+    "m for restriction on components, " \
     "n for none (c/f/b/m/n): ").lower()
     
     if res == 'c':
@@ -316,12 +317,8 @@ if __name__ == "__main__":
 
 
             for m in range(M):
-                num_restricted = int(0.05 * R * S[m])  # 5% restriction
-                restricted_indices = np.random.choice(R * S[m], num_restricted, replace=False)
-                for idx in restricted_indices:
-                    i = idx // S[m]
-                    j = idx % S[m]
-                    T[m].append((i, j))
+                restricted_rows = np.random.choice(R, int(0.01 * R), replace=False)
+                T[m] = [(i, s) for i in restricted_rows for s in range(S[m])]
 
             main(res='m', T=T)
     else:
