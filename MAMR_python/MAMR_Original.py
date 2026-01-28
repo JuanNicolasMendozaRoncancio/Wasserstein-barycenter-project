@@ -3,8 +3,9 @@ import time
 import GetPlan as gp
 from GetPlan import GetPlan
 import matplotlib.pyplot as plt
+from salvaPNG import salvaPNG
 
-def MAMR(d, q, M, R, S, p, rho, tol, MaxCPU, PrintEvery,UseGPU = False):
+def MAMR(d, q, M, R, S, p, rho, tol, MaxCPU, PrintEvery,filename, folder,UseGPU = False):
     """
     Python version of MAM-R (Algorithm 1)
     """
@@ -73,13 +74,13 @@ def MAMR(d, q, M, R, S, p, rho, tol, MaxCPU, PrintEvery,UseGPU = False):
             # plt.show(block=False)
             # plt.pause(0.01)
 
-            img = xp.reshape(1 - p, (Kn, Kn))
-            img_np = xp.asnumpy(img) if UseGPU else img
+            # img = xp.reshape(1 - p, (Kn, Kn))
+            # img_np = xp.asnumpy(img) if UseGPU else img
 
-            im_handle.set_data(img_np)
-            im_handle.set_clim(img_np.min(), img_np.max())
-            plt.title(f"k={k}, t={round(cpu)}")
-            plt.pause(0.01)
+            # im_handle.set_data(img_np)
+            # im_handle.set_clim(img_np.min(), img_np.max())
+            # plt.title(f"k={k}, t={round(cpu)}")
+            # plt.pause(0.01)
             
             if nx <= tol:
                 break
@@ -110,16 +111,37 @@ def MAMR(d, q, M, R, S, p, rho, tol, MaxCPU, PrintEvery,UseGPU = False):
             pk[m] = theta[m].sum(axis=1)
             avg += a[m] * pk[m]
 
+            cpu_values = [1.0 * MaxCPU]
+            for cv in cpu_values:
+                if cpu >= cv and cpu < cv + PrintEvery:
+                    p_img = p.reshape(Kn, Kn)
+                    img = 1 - p_img
+                    img = (img - img.min()) / (img.max() - img.min())
+
+                    fig, ax = plt.subplots(figsize=(4, 4))
+
+                    ax.imshow(img, cmap="gray")
+                    ax.axis("off")              # ← quita ejes
+                    ax.set_position([0, 0, 1, 1])  # ← ocupa toda la figura
+
+                    filename = f"{filename}_barycenter_cap_{int(cv/MaxCPU*100)}.png"
+                    salvaPNG(
+                        fig=fig,
+                        filename=filename,
+                        outputFolder=folder
+                    )
+                    plt.close(fig)
+
     cpu = time.time() - t0
     print(f"k = {k:5d}, |pk-pkk| = {nx:5.2e}, cpu = {cpu:5.0f}")
 
-    img = xp.reshape(1 - p, (Kn, Kn))
-    img_np = xp.asnumpy(img) if UseGPU else img
+    # img = xp.reshape(1 - p, (Kn, Kn))
+    # img_np = xp.asnumpy(img) if UseGPU else img
 
-    plt.figure()
-    plt.imshow(img_np, cmap='hot')
-    plt.colorbar()
-    plt.title(f"Final k={k}, t={round(cpu)}")
-    plt.show()
+    # plt.figure()
+    # plt.imshow(img_np, cmap='hot')
+    # plt.colorbar()
+    # plt.title(f"Final k={k}, t={round(cpu)}")
+    # plt.show()
 
     return p, val, cpu, theta
