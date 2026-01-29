@@ -145,14 +145,14 @@ def MAMR_RC(d, q, M, R, S, p, rho, tol, MaxCPU, PrintEvery,u,folder,filename,Use
 
                     fig, ax = plt.subplots(figsize=(4, 4))
 
-                    ax.imshow(img, cmap="gray")
+                    ax.imshow(img, cmap="viridis")
                     ax.axis("off")              # ← quita ejes
                     ax.set_position([0, 0, 1, 1])  # ← ocupa toda la figura
 
-                    filename = f"{filename}_barycenter_cap_{int(cv/MaxCPU*100)}.png"
+                    out_filename = f"{filename}_barycenter_cap_{int(cv/MaxCPU*100)}.png"
                     salvaPNG(
                         fig=fig,
-                        filename=filename,
+                        filename=out_filename,
                         outputFolder=folder
                     )
                     plt.close(fig)

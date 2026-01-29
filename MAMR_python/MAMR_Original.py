@@ -43,14 +43,14 @@ def MAMR(d, q, M, R, S, p, rho, tol, MaxCPU, PrintEvery,filename, folder,UseGPU 
     cpu = 0.0
     k = 0
 
-    plt.figure()
-    img = xp.reshape(1 - p, (Kn, Kn))
-    img_np = xp.asnumpy(img) if UseGPU else img
+    # plt.figure()
+    # img = xp.reshape(1 - p, (Kn, Kn))
+    # img_np = xp.asnumpy(img) if UseGPU else img
 
-    im_handle = plt.imshow(img_np, cmap='hot')
-    cbar = plt.colorbar(im_handle)
-    plt.title("MAM-R")
-    plt.pause(0.01)
+    # im_handle = plt.imshow(img_np, cmap='hot')
+    # cbar = plt.colorbar(im_handle)
+    # plt.title("MAM-R")
+    # plt.pause(0.01)
 
     while cpu <= MaxCPU:
         k += 1
@@ -120,14 +120,14 @@ def MAMR(d, q, M, R, S, p, rho, tol, MaxCPU, PrintEvery,filename, folder,UseGPU 
 
                     fig, ax = plt.subplots(figsize=(4, 4))
 
-                    ax.imshow(img, cmap="gray")
+                    ax.imshow(img, cmap="viridis")
                     ax.axis("off")              # ← quita ejes
                     ax.set_position([0, 0, 1, 1])  # ← ocupa toda la figura
 
-                    filename = f"{filename}_barycenter_cap_{int(cv/MaxCPU*100)}.png"
+                    out_filename = f"{filename}_barycenter_cap_{int(cv/MaxCPU*100)}.png"
                     salvaPNG(
                         fig=fig,
-                        filename=filename,
+                        filename=out_filename,
                         outputFolder=folder
                     )
                     plt.close(fig)
@@ -135,6 +135,9 @@ def MAMR(d, q, M, R, S, p, rho, tol, MaxCPU, PrintEvery,filename, folder,UseGPU 
     cpu = time.time() - t0
     print(f"k = {k:5d}, |pk-pkk| = {nx:5.2e}, cpu = {cpu:5.0f}")
 
+    print("Minimun frohenius theta:", min([np.linalg.norm(theta[m]) for m in range(M)]))
+    print("Minimun capacity theta:", min([np.max(theta[m]) for m in range(M)]))
+    print("Max p:", np.max(p))
     # img = xp.reshape(1 - p, (Kn, Kn))
     # img_np = xp.asnumpy(img) if UseGPU else img
 

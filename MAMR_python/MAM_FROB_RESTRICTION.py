@@ -62,7 +62,7 @@ def MAMR_RC_F(d, tau,  q, M, R, S, p, rho, tol, MaxCPU,filename, folder, PrintEv
     # weights a_m = (1/S_m) / sum_j (1/S_j)
     a = 1.0 / xp.asarray(S)
     a = a / a.sum()
-    u = float(u)
+    # u = float(u)
 
 
     #Romero
@@ -171,14 +171,14 @@ def MAMR_RC_F(d, tau,  q, M, R, S, p, rho, tol, MaxCPU,filename, folder, PrintEv
 
                     fig, ax = plt.subplots(figsize=(4, 4))
 
-                    ax.imshow(img, cmap="gray")
+                    ax.imshow(img, cmap="viridis")
                     ax.axis("off")              # ← quita ejes
                     ax.set_position([0, 0, 1, 1])  # ← ocupa toda la figura
 
-                    filename = f"{filename}_barycenter_cap_{int(cv/MaxCPU*100)}.png"
+                    out_filename = f"{filename}_barycenter_cap_{int(cv/MaxCPU*100)}.png"
                     salvaPNG(
                         fig=fig,
-                        filename=filename,
+                        filename=out_filename,
                         outputFolder=folder
                     )
                     plt.close(fig)

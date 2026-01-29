@@ -18,14 +18,14 @@ def main(res='o', filename=None, folder= None, u_vect=None, u_sca = 1, tau = 1, 
     # ===============================
     # Parameters
     # ===============================
-    M = 30          # number of images
-    K =60         # image size K x K    
-    MaxCPU = 600   # seconds
+    M = 20          # number of images
+    K = 64         # image size K x K    
+    MaxCPU = 1200   # seconds
     PrintEvery = 10  # seconds
     tol = -np.inf
 
     UseGPU = False  # CPU only
-    rho = 350
+    rho = 400
 
     # ===============================
     # Distance matrix
@@ -43,7 +43,7 @@ def main(res='o', filename=None, folder= None, u_vect=None, u_sca = 1, tau = 1, 
 
     for i in range(M):
         data = np.loadtxt(
-            os.path.join("dataPeyre", f"{i+1}.csv"),
+            os.path.join(r"C:\Users\juann\Downloads\Mines\Scolarite\T2\MAM\MAMR_python\Data_app_4_5\img_csv", f"{i:02d}.csv"),
             delimiter=","
         )
 
@@ -58,12 +58,12 @@ def main(res='o', filename=None, folder= None, u_vect=None, u_sca = 1, tau = 1, 
 
         Q[:, i] = im.reshape(-1)
 
-        if i < 25:
-            plt.subplot(5, 5, i + 1)
-            plt.imshow(1 - im, cmap="hot")
-            plt.axis("off")
+    #     if i < 25:
+    #         plt.subplot(5, 5, i + 1)
+    #         plt.imshow(1 - im, cmap="hot")
+    #         plt.axis("off")
 
-    plt.show()
+    # plt.show()
 
     # ===============================
     # Arrange data for MAM-R
@@ -87,7 +87,7 @@ def main(res='o', filename=None, folder= None, u_vect=None, u_sca = 1, tau = 1, 
     # ===============================
     if res == 'c':
         print("Running MAM-R with restriction on capacity...")
-        p, _, _, _ = MAMR_RC(
+        p, _, _, theta = MAMR_RC(
             d=d,
             q=q,
             M=M,
@@ -133,7 +133,8 @@ def main(res='o', filename=None, folder= None, u_vect=None, u_sca = 1, tau = 1, 
             tol=tol,
             MaxCPU=MaxCPU,
             PrintEvery=PrintEvery,
-            u=u_vect
+            u=u_vect,
+            filename=filename, folder=folder
         )
     elif res == 'm':
         print("Running MAM-R with restriction on components...")
@@ -164,8 +165,10 @@ def main(res='o', filename=None, folder= None, u_vect=None, u_sca = 1, tau = 1, 
             UseGPU=UseGPU,
             tol=tol,
             MaxCPU=MaxCPU,
-            PrintEvery=PrintEvery
+            PrintEvery=PrintEvery,
+            filename=filename, folder=folder
         )
+
 
     # ===============================
     # Plot result
@@ -232,7 +235,9 @@ if __name__ == "__main__":
         list = input("Run for multiple u values? (y/n): ").lower() == 'y'
         if not list:
             u_value = float(input("Enter the value of u (between 0 and 1): "))
-            main(res='c', u_sca=u_value)
+            main(res='c', u_sca=u_value,
+            filename="MAMR_Cap_App2_3", 
+            folder=r"C:\Users\juann\Downloads\Mines\Scolarite\T2\MAM\MAMR_python\Fig\capacity\App2_3")
         else:
             u_values = [1, 0.75, 0.5, 0.25, 0.1,0.01,0.001,0.0001]
             print("Running MAM-R with capacity constraints for different u values:", u_values)
@@ -255,7 +260,9 @@ if __name__ == "__main__":
                 main(res='f', tau=tau_value)
         else:
             tau_value = float(input("Enter the value of tau (positive number): "))
-            main(res='f', tau=tau_value)
+            main(res='f', tau=tau_value,
+            filename="MAMR_Frob_App2_3", 
+            folder=r"C:\Users\juann\Downloads\Mines\Scolarite\T2\MAM\MAMR_python\Fig\frobenius\App2_3")
     elif res == 'b':
         u = input("Want to set a specific value for vector u (non recomended for large R)? (y/n): ").lower()
         if u == 'y':
@@ -269,10 +276,12 @@ if __name__ == "__main__":
         else:
             K = int(input("Enter the image size K (to compute R=K*K): "))
             R = K * K
-            equal_u = 1.0 / R + 0.01  # Slightly above uniform to ensure sum(u) > 1
+            equal_u = 0.000812009761059768/(2.5)  # Slightly above uniform to ensure sum(u) > 1
             u_vector = [equal_u] * R
             print(f"Using uniform capacity vector u with each element = {equal_u}")
-            main(res='b', u_vect=u_vector)  
+            main(res='b', u_vect=u_vector,
+                 filename="MAMR_Cap_on_bary_App4_5", 
+                 folder=r"C:\Users\juann\Downloads\Mines\Scolarite\T2\MAM\MAMR_python\Fig\capacity_on_barycenter\App4_5")  
     elif res == 'm':
         M = int(input("Enter the number of marginals M: "))
         K = int(input("Enter the image size K (to compute R=K*K): "))
@@ -324,4 +333,6 @@ if __name__ == "__main__":
 
             main(res='m', T=T)
     else:
-        main(res='o')
+        main(res='o', 
+             filename="MAMR_Original_App4_5", 
+             folder=r"C:\Users\juann\Downloads\Mines\Scolarite\T2\MAM\MAMR_python\Fig\originals\App4_5")
